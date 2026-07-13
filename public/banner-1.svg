@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" role="img" aria-label="Ganna.LK collection banner">
+  <defs>
+    <linearGradient id="b1bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb184"/>
+      <stop offset="0.55" stop-color="#f87942"/>
+      <stop offset="1" stop-color="#e35c26"/>
+    </linearGradient>
+    <radialGradient id="b1glow" cx="0.78" cy="0.28" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="b1bag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ffe9dc"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="600" fill="url(#b1bg)"/>
+  <rect width="1600" height="600" fill="url(#b1glow)"/>
+
+  <!-- soft decorative circles -->
+  <circle cx="1180" cy="150" r="230" fill="#ffffff" opacity="0.12"/>
+  <circle cx="230" cy="470" r="180" fill="#000000" opacity="0.05"/>
+  <circle cx="150" cy="120" r="60" fill="#ffffff" opacity="0.18"/>
+
+  <!-- thin accent rings -->
+  <circle cx="1180" cy="150" r="300" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.18"/>
+
+  <!-- shopping bag motif -->
+  <g transform="translate(1050 190)">
+    <rect x="0" y="70" width="300" height="330" rx="34" fill="url(#b1bag)"/>
+    <rect x="0" y="70" width="300" height="46" rx="20" fill="#ffffff" opacity="0.6"/>
+    <path d="M78 84 V44 a72 72 0 0 1 144 0 V84" fill="none" stroke="#f87942" stroke-width="20" stroke-linecap="round"/>
+    <circle cx="150" cy="250" r="46" fill="#f87942" opacity="0.14"/>
+  </g>
+
+  <!-- small brand dots -->
+  <circle cx="360" cy="200" r="16" fill="#ffffff" opacity="0.7"/>
+  <circle cx="420" cy="250" r="9" fill="#ffffff" opacity="0.5"/>
+</svg>

@@ -20,6 +20,9 @@
 # production
 /build
 
+# admin-uploaded images (runtime content, not source)
+/public/uploads
+
 # misc
 .DS_Store
 *.pem
