@@ -15,14 +15,19 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { error } = await authClient.signIn.email({ email, password })
-    setLoading(false)
-    if (error) {
-      setError(error.message ?? 'Login failed')
-      return
+    try {
+      const { error } = await authClient.signIn.email({ email, password })
+      if (error) {
+        setError(error.message ?? 'Login failed')
+        return
+      }
+      router.push('/admin')
+      router.refresh()
+    } catch {
+      setError('Could not reach the server. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    router.push('/admin')
-    router.refresh()
   }
 
   return (
