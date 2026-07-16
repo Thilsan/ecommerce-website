@@ -49,8 +49,8 @@ const INFORMATION_LINKS = [
 export default function Footer() {
   return (
     <footer className="bg-black text-white">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="col-span-2 lg:col-span-1">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:grid-cols-3">
+        <div className="col-span-2 sm:col-span-1">
           <Link href="/" className="text-lg font-semibold tracking-tight">
             Ganna<span className="text-brand">.LK</span>
           </Link>
@@ -82,19 +82,6 @@ export default function Footer() {
                 </Link>
               </li>
             ))}
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-white/80">Get in touch</h3>
-          <ul className="mt-4 space-y-3 text-sm text-white/60">
-            <li>
-              <a href="mailto:hello@ganna.lk" className="transition hover:text-white">
-                hello@ganna.lk
-              </a>
-            </li>
-            <li>Colombo, Sri Lanka</li>
-            <li>Quality everyday goods, thoughtfully made.</li>
           </ul>
         </div>
       </div>
