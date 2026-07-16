@@ -57,6 +57,13 @@ export default function Footer() {
           <p className="mt-3 max-w-xs text-sm text-white/60">
             Quality everyday goods, thoughtfully made.
           </p>
+          <p className="mt-3 text-sm text-white/60">
+            <a href="mailto:hello@ganna.lk" className="transition hover:text-white">
+              hello@ganna.lk
+            </a>
+            <br />
+            Colombo, Sri Lanka
+          </p>
         </div>
 
         <div>
