@@ -43,6 +43,13 @@
       "when": 1783693922685,
       "tag": "0005_vengeful_zzzax",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784192808593,
+      "tag": "0006_silly_shiva",
+      "breakpoints": true
     }
   ]
 }

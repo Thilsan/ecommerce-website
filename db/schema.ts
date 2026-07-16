@@ -62,6 +62,13 @@ export const productVariants = pgTable('product_variants', {
   stock: integer('stock').notNull().default(0),
 })
 
+/* ---------- newsletter ---------- */
+export const newsletterSubscribers = pgTable('newsletter_subscribers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 /* ---------- addresses (belong to a Better Auth user) ---------- */
 export const addresses = pgTable('addresses', {
   id: uuid('id').primaryKey().defaultRandom(),
