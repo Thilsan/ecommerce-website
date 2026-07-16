@@ -94,6 +94,7 @@ export default function Footer() {
               </a>
             </li>
             <li>Colombo, Sri Lanka</li>
+            <li>Quality everyday goods, thoughtfully made.</li>
           </ul>
         </div>
       </div>
