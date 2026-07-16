@@ -49,7 +49,7 @@ const INFORMATION_LINKS = [
 export default function Footer() {
   return (
     <footer className="bg-black text-white">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:grid-cols-3 lg:grid-cols-4">
         <div className="col-span-2 sm:col-span-1">
           <Link href="/" className="text-lg font-semibold tracking-tight">
             Ganna<span className="text-brand">.LK</span>
@@ -91,38 +91,32 @@ export default function Footer() {
             ))}
           </ul>
         </div>
-      </div>
 
-      <div className="border-t border-white/10">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-white/80">Follow Us</h3>
-            <div className="mt-4 flex items-center gap-3">
-              {SOCIAL_LINKS.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.href}
-                  aria-label={social.name}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white/80 transition hover:border-white/40 hover:text-white"
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
-                    {social.icon}
-                  </svg>
-                </a>
-              ))}
-            </div>
+        <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-white/80">Follow Us</h3>
+          <div className="mt-4 flex items-center gap-3">
+            {SOCIAL_LINKS.map((social) => (
+              <a
+                key={social.name}
+                href={social.href}
+                aria-label={social.name}
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white/80 transition hover:border-white/40 hover:text-white"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+                  {social.icon}
+                </svg>
+              </a>
+            ))}
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-white/80">
-              Newsletter Sign Up
-            </h3>
-            <p className="mt-2 max-w-sm text-sm text-white/60">
-              Sign up for exclusive updates, new arrivals &amp; insider only discounts
-            </p>
-            <div className="mt-4 max-w-md">
-              <NewsletterForm />
-            </div>
+          <h3 className="mt-8 text-sm font-semibold uppercase tracking-wide text-white/80">
+            Newsletter Sign Up
+          </h3>
+          <p className="mt-2 text-sm text-white/60">
+            Sign up for exclusive updates, new arrivals &amp; insider only discounts
+          </p>
+          <div className="mt-4">
+            <NewsletterForm />
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ export default function NewsletterForm() {
 
   return (
     <div>
-      <form ref={formRef} action={formAction} className="flex flex-col gap-2 sm:flex-row">
+      <form ref={formRef} action={formAction} className="flex flex-col gap-2">
         <input
           type="email"
           name="email"
