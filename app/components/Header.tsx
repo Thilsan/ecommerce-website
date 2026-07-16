@@ -244,22 +244,25 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
                     </button>
                   </>
                 ) : (
-                  <>
+                  <div className="p-1">
                     <Link
                       href="/login"
                       onClick={() => setAccountOpen(false)}
-                      className="block rounded-md px-3 py-2 text-sm text-neutral-700 transition hover:bg-black/5"
+                      className="block w-full rounded-full bg-brand px-3 py-2 text-center text-sm font-medium text-white transition hover:bg-brand/90"
                     >
                       Log in
                     </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setAccountOpen(false)}
-                      className="block rounded-md px-3 py-2 text-sm text-neutral-700 transition hover:bg-black/5"
-                    >
-                      Create an account
-                    </Link>
-                  </>
+                    <p className="mt-3 text-center text-sm text-neutral-500">
+                      Don&rsquo;t have an account?{' '}
+                      <Link
+                        href="/register"
+                        onClick={() => setAccountOpen(false)}
+                        className="font-medium text-brand hover:underline"
+                      >
+                        Register
+                      </Link>
+                    </p>
+                  </div>
                 )}
               </div>
             )}
