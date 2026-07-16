@@ -73,7 +73,15 @@ export default async function OrderConfirmationPage({
         </p>
       </div>
 
-      <Link href="/products" className="mt-8 inline-block text-sm font-medium text-brand hover:underline">
+      <p className="mt-8 text-sm text-neutral-500">
+        Save your order number above — you can check its status anytime at{' '}
+        <Link href="/track-order" className="font-medium text-brand hover:underline">
+          Track order
+        </Link>
+        .
+      </p>
+
+      <Link href="/products" className="mt-4 inline-block text-sm font-medium text-brand hover:underline">
         Continue shopping &rarr;
       </Link>
     </main>

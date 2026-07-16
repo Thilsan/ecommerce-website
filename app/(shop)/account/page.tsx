@@ -1,8 +1,11 @@
 import Link from 'next/link'
 import { requireUser } from '@/lib/auth-helpers'
 import { getOrdersForUser } from '@/db/queries'
+import { db } from '@/db'
 import { formatPrice } from '@/lib/format'
 import ChangePasswordForm from './ChangePasswordForm'
+import AddressRow from './AddressRow'
+import AddAddressSection from './AddAddressSection'
 
 const statusStyles: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
@@ -19,7 +22,10 @@ function formatDate(d: Date) {
 
 export default async function AccountPage() {
   const { user } = await requireUser()
-  const orders = await getOrdersForUser(user.id)
+  const [orders, savedAddresses] = await Promise.all([
+    getOrdersForUser(user.id),
+    db.query.addresses.findMany({ where: (a, { eq }) => eq(a.userId, user.id) }),
+  ])
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
@@ -37,6 +43,25 @@ export default async function AccountPage() {
             <dd className="font-medium">{user.email}</dd>
           </div>
         </dl>
+      </section>
+
+      <section className="mt-6 rounded-xl border border-black/10 p-6">
+        <h2 className="text-sm font-semibold">Saved addresses</h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          Save an address here to speed up checkout later.
+        </p>
+
+        {savedAddresses.length > 0 && (
+          <ul className="mt-4 divide-y divide-black/5 rounded-lg border border-black/10">
+            {savedAddresses.map((a) => (
+              <AddressRow key={a.id} address={a} />
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-4">
+          <AddAddressSection />
+        </div>
       </section>
 
       <section className="mt-6 rounded-xl border border-black/10 p-6">

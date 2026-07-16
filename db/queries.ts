@@ -212,6 +212,20 @@ export async function getOrderForUser(orderId: string, userId: string) {
   })
 }
 
+// Look up a guest order by its confirmation email + order id — lets a guest
+// (no account) check status without needing to sign in. Matches on the id
+// prefix shown at checkout, so shoppers don't have to type the full UUID.
+// The id filter is done in JS (not SQL) since `id` is a uuid column and
+// there's no case where a customer email has enough orders for this to matter.
+export async function findGuestOrder(orderIdPrefix: string, email: string) {
+  const prefix = orderIdPrefix.trim().toLowerCase()
+  const candidates = await db.query.orders.findMany({
+    where: (o, { ilike }) => ilike(o.customerEmail, email.trim()),
+    with: { items: { with: { variant: { with: { product: true } } } } },
+  })
+  return candidates.find((o) => o.id.toLowerCase().startsWith(prefix)) ?? null
+}
+
 // One product by its URL slug, including variants + category. Null if not found.
 export async function getProductBySlug(slug: string) {
   return db.query.products.findFirst({
