@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { useWishlist } from '@/lib/wishlist-context'
+import { authClient } from '@/lib/auth-client'
 
 export type CategoryNav = {
   id: string
@@ -61,12 +63,30 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Real category data keyed by slug — feeds each category's mega menu.
   const bySlug = new Map(categories.map((c) => [c.slug, c]))
   const { count, openCart } = useCart()
   const { count: wishlistCount } = useWishlist()
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
+
+  function toggleAccount() {
+    cancelClose()
+    setOpenMenu(null)
+    setSearchOpen(false)
+    setMobileOpen(false)
+    setAccountOpen((v) => !v)
+  }
+
+  async function onSignOut() {
+    await authClient.signOut()
+    setAccountOpen(false)
+    router.push('/')
+    router.refresh()
+  }
 
   function cancelClose() {
     if (closeTimer.current) clearTimeout(closeTimer.current)
@@ -190,16 +210,60 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
           </button>
 
           {/* Account */}
-          <button
-            type="button"
-            aria-label="Account"
-            className="rounded-full p-2 text-neutral-700 transition hover:bg-black/5 hover:text-brand"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={toggleAccount}
+              aria-label="Account"
+              aria-expanded={accountOpen}
+              className={`rounded-full p-2 transition hover:bg-black/5 hover:text-brand ${
+                accountOpen ? 'bg-black/5 text-brand' : 'text-neutral-700'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+
+            {accountOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-black/10 bg-white p-2 shadow-lg">
+                {session?.user ? (
+                  <>
+                    <div className="px-3 py-2">
+                      <p className="truncate text-sm font-medium">{session.user.name || 'Account'}</p>
+                      <p className="truncate text-xs text-neutral-500">{session.user.email}</p>
+                    </div>
+                    <div className="my-1 border-t border-black/10" />
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="w-full rounded-md px-3 py-2 text-left text-sm text-neutral-700 transition hover:bg-black/5"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setAccountOpen(false)}
+                      className="block rounded-md px-3 py-2 text-sm text-neutral-700 transition hover:bg-black/5"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setAccountOpen(false)}
+                      className="block rounded-md px-3 py-2 text-sm text-neutral-700 transition hover:bg-black/5"
+                    >
+                      Create an account
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Wishlist */}
           <Link
