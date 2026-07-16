@@ -1,7 +1,7 @@
 import { db } from './index'
 import { desc, eq, sql } from 'drizzle-orm'
-import { orderItems, productVariants } from './schema'
-import { minPriceCents } from '@/lib/format'
+import { orderItems, productVariants, products } from './schema'
+import { minPriceCents, parseVariantName } from '@/lib/format'
 
 // Admin-curated "New arrivals" — products flagged isNewArrival, newest first.
 // Tops up with the newest other active products so the section isn't empty
@@ -102,36 +102,115 @@ export async function getActiveBanners() {
   })
 }
 
-// All categories, alphabetical — used for the listing page's filter bar.
+// All categories, alphabetical, with a count of active products in each —
+// used for the listing page's filter sidebar. The count ignores any other
+// filter selection (color, size, price) so it reads as "total in category",
+// same as a typical storefront facet.
+export async function getCategoriesWithCounts() {
+  const cats = await db.query.categories.findMany({
+    orderBy: (c, { asc }) => asc(c.name),
+  })
+  const rows = await db
+    .select({ categoryId: products.categoryId, count: sql<number>`count(*)::int` })
+    .from(products)
+    .where(eq(products.isActive, true))
+    .groupBy(products.categoryId)
+  const counts = new Map(rows.map((r) => [r.categoryId, r.count]))
+  return cats.map((c) => ({ ...c, count: counts.get(c.id) ?? 0 }))
+}
+
+// Categories, alphabetical — used where counts aren't needed.
 export async function getCategories() {
   return db.query.categories.findMany({
     orderBy: (c, { asc }) => asc(c.name),
   })
 }
 
-// Active products for the listing page, optionally filtered by category slug,
-// a free-text search term, and sorted. Price sorts run in JS because the sort
-// key (cheapest variant) lives on the variants relation, which the DB query
-// can't order by directly.
+// Color/size facet options (with counts) for the listing page's filter
+// sidebar, scoped to the selected categories (if any) but ignoring any
+// selected color/size/price so the sidebar always shows every option
+// reachable from the current category selection, not just the current results.
+export async function getFacetOptions(opts: { category?: string[] } = {}) {
+  const { category } = opts
+
+  let categoryIds: string[] | undefined
+  if (category && category.length > 0) {
+    const cats = await db.query.categories.findMany({
+      where: (c, { inArray }) => inArray(c.slug, category),
+    })
+    categoryIds = cats.map((c) => c.id)
+    if (categoryIds.length === 0) return { colors: [], sizes: [] }
+  }
+
+  const scoped = await db.query.products.findMany({
+    where: (p, { and, eq, inArray }) => {
+      const conditions = [eq(p.isActive, true)]
+      if (categoryIds) conditions.push(inArray(p.categoryId, categoryIds))
+      return and(...conditions)
+    },
+    with: { variants: true },
+  })
+
+  const colorCounts = new Map<string, number>()
+  const sizeCounts = new Map<string, number>()
+  for (const p of scoped) {
+    const colors = new Set<string>()
+    const sizes = new Set<string>()
+    for (const v of p.variants) {
+      const { size, color } = parseVariantName(v.name)
+      if (color) colors.add(color)
+      if (size) sizes.add(size)
+    }
+    for (const c of colors) colorCounts.set(c, (colorCounts.get(c) ?? 0) + 1)
+    for (const s of sizes) sizeCounts.set(s, (sizeCounts.get(s) ?? 0) + 1)
+  }
+
+  const toSortedList = (counts: Map<string, number>) =>
+    [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+
+  return { colors: toSortedList(colorCounts), sizes: toSortedList(sizeCounts) }
+}
+
+// Active products for the listing page, optionally filtered by category
+// slugs, colors, sizes, a price range, a free-text search term, and sorted.
+// Price sorts run in JS because the sort key (cheapest variant) lives on the
+// variants relation, which the DB query can't order by directly.
 export type ProductSort = 'newest' | 'price-asc' | 'price-desc'
 
 export async function listProducts(
-  opts: { category?: string; sort?: ProductSort; query?: string } = {},
+  opts: {
+    category?: string[]
+    color?: string[]
+    size?: string[]
+    sort?: ProductSort
+    query?: string
+    minPriceCents?: number
+    maxPriceCents?: number
+  } = {},
 ) {
-  const { category, sort = 'newest', query } = opts
+  const {
+    category,
+    color,
+    size,
+    sort = 'newest',
+    query,
+    minPriceCents: minPrice,
+    maxPriceCents: maxPrice,
+  } = opts
 
-  // Resolve the category slug to an id up front. An unknown slug means the
-  // filter matches nothing, so return an empty listing rather than everything.
-  let categoryId: string | undefined
-  if (category) {
-    const cat = await db.query.categories.findFirst({
-      where: (c, { eq }) => eq(c.slug, category),
+  // Resolve category slugs to ids up front. Unknown slugs mean the filter
+  // matches nothing, so return an empty listing rather than everything.
+  let categoryIds: string[] | undefined
+  if (category && category.length > 0) {
+    const cats = await db.query.categories.findMany({
+      where: (c, { inArray }) => inArray(c.slug, category),
     })
-    if (!cat) return []
-    categoryId = cat.id
+    categoryIds = cats.map((c) => c.id)
+    if (categoryIds.length === 0) return []
   }
 
-  const filterId = categoryId
   const searchTerm = query?.trim()
   // Match each word independently (in either name or description) rather than
   // the whole phrase as one substring, so word order/extra words don't matter
@@ -139,9 +218,9 @@ export async function listProducts(
   const searchWords = searchTerm ? searchTerm.toLowerCase().split(/\s+/).filter(Boolean) : []
 
   const products = await db.query.products.findMany({
-    where: (p, { and, eq, ilike, or }) => {
+    where: (p, { and, eq, ilike, or, inArray }) => {
       const conditions = [eq(p.isActive, true)]
-      if (filterId) conditions.push(eq(p.categoryId, filterId))
+      if (categoryIds) conditions.push(inArray(p.categoryId, categoryIds))
       for (const word of searchWords) {
         conditions.push(or(ilike(p.name, `%${word}%`), ilike(p.description, `%${word}%`))!)
       }
@@ -150,6 +229,36 @@ export async function listProducts(
     with: { variants: true },
     orderBy: (p, { desc }) => desc(p.createdAt),
   })
+
+  // Price lives on the variants relation, so the range filter (like the price
+  // sort below) has to run in JS rather than as part of the DB query.
+  const priceFiltered =
+    minPrice === undefined && maxPrice === undefined
+      ? products
+      : products.filter((p) => {
+          const price = minPriceCents(p.variants)
+          if (price === null) return false
+          if (minPrice !== undefined && price < minPrice) return false
+          if (maxPrice !== undefined && price > maxPrice) return false
+          return true
+        })
+
+  // Color/size come from the same free-text variant name field, parsed the
+  // same way the sidebar facet counts are built — a product matches if any
+  // of its variants has the selected color/size (OR within a facet, AND
+  // across facets: pick a color AND a size and it must have both, though not
+  // necessarily on the same variant).
+  const colorSet = color && color.length > 0 ? new Set(color) : undefined
+  const sizeSet = size && size.length > 0 ? new Set(size) : undefined
+  const variantFiltered =
+    !colorSet && !sizeSet
+      ? priceFiltered
+      : priceFiltered.filter((p) => {
+          const parsed = p.variants.map((v) => parseVariantName(v.name))
+          const hasColor = !colorSet || parsed.some((v) => v.color && colorSet.has(v.color))
+          const hasSize = !sizeSet || parsed.some((v) => v.size && sizeSet.has(v.size))
+          return hasColor && hasSize
+        })
 
   // Rank search results by how well they match, best first — an exact name
   // match should never be buried below a merely-related product. Explicit
@@ -164,12 +273,12 @@ export async function listProducts(
       if (name.includes(term)) return 1
       return 0
     }
-    return [...products].sort((a, b) => score(b) - score(a))
+    return [...variantFiltered].sort((a, b) => score(b) - score(a))
   }
 
   if (sort === 'price-asc' || sort === 'price-desc') {
     const dir = sort === 'price-asc' ? 1 : -1
-    return [...products].sort((a, b) => {
+    return [...variantFiltered].sort((a, b) => {
       // Products with no variants have no price — push them to the end.
       const pa = minPriceCents(a.variants) ?? Infinity
       const pb = minPriceCents(b.variants) ?? Infinity
@@ -177,7 +286,7 @@ export async function listProducts(
     })
   }
 
-  return products
+  return variantFiltered
 }
 
 // Categories with a few of their newest active products — used for the nav mega menu.

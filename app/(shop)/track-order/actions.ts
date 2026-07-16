@@ -9,6 +9,8 @@ export type TrackOrderState = {
     status: string
     totalCents: number
     createdAt: Date
+    deliveryPersonName: string | null
+    deliveryPersonPhone: string | null
     items: { id: string; productName: string; variantName: string; quantity: number; unitPriceCents: number }[]
   }
 }
@@ -35,6 +37,8 @@ export async function lookupGuestOrder(
       status: order.status,
       totalCents: order.totalCents,
       createdAt: order.createdAt,
+      deliveryPersonName: order.deliveryPersonName,
+      deliveryPersonPhone: order.deliveryPersonPhone,
       items: order.items.map((it) => ({
         id: it.id,
         productName: it.variant.product.name,

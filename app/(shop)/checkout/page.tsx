@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useCart } from '@/lib/cart-context'
 import { formatPrice } from '@/lib/format'
 import { authClient } from '@/lib/auth-client'
-import { placeOrder, type CheckoutState } from '@/app/(shop)/actions'
+import { placeOrder, getSavedAddresses, type CheckoutState, type SavedAddress } from '@/app/(shop)/actions'
 
 // Shown before the checkout form to anyone who isn't already signed in —
 // mirrors the standard "guest / log in / register" fork most stores use.
@@ -53,6 +53,20 @@ export default function CheckoutPage() {
   const [guestChosen, setGuestChosen] = useState(false)
   const [state, formAction, pending] = useActionState<CheckoutState, FormData>(placeOrder, {})
   const subtotalCents = items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0)
+
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('new')
+
+  // Once we know who's signed in, offer their saved addresses instead of a blank form.
+  useEffect(() => {
+    if (!session?.user) return
+    getSavedAddresses().then((result) => {
+      setSavedAddresses(result)
+      if (result.length > 0) setSelectedAddressId(result[0].id)
+    })
+    // session is a fresh object each render — key off the id instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id])
 
   // Wait for the cart to hydrate from localStorage before deciding it's empty,
   // and don't bounce back to /cart once an order has just been placed.
@@ -133,30 +147,93 @@ export default function CheckoutPage() {
             <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
               Shipping address
             </h2>
-            <div className="mt-3 grid gap-4">
-              <div>
-                <label className={label}>Address line 1</label>
-                <input name="shippingLine1" required className={input} />
+
+            {savedAddresses.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {savedAddresses.map((address) => (
+                  <label
+                    key={address.id}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition ${
+                      selectedAddressId === address.id ? 'border-brand ring-1 ring-brand' : 'border-black/15'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      checked={selectedAddressId === address.id}
+                      onChange={() => setSelectedAddressId(address.id)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block">
+                        {address.line1}
+                        {address.line2 ? `, ${address.line2}` : ''}
+                      </span>
+                      <span className="block text-neutral-500">
+                        {address.city}, {address.postalCode}, {address.country}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${
+                    selectedAddressId === 'new' ? 'border-brand ring-1 ring-brand' : 'border-black/15'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    checked={selectedAddressId === 'new'}
+                    onChange={() => setSelectedAddressId('new')}
+                  />
+                  Use a new address
+                </label>
               </div>
-              <div>
-                <label className={label}>Address line 2 (optional)</label>
-                <input name="shippingLine2" className={input} />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+            )}
+
+            {selectedAddressId === 'new' ? (
+              <div className="mt-3 grid gap-4">
                 <div>
-                  <label className={label}>City</label>
-                  <input name="shippingCity" required className={input} />
+                  <label className={label}>Address line 1</label>
+                  <input name="shippingLine1" required className={input} />
                 </div>
                 <div>
-                  <label className={label}>Postal code</label>
-                  <input name="shippingPostalCode" required className={input} />
+                  <label className={label}>Address line 2 (optional)</label>
+                  <input name="shippingLine2" className={input} />
                 </div>
-                <div>
-                  <label className={label}>Country</label>
-                  <input name="shippingCountry" defaultValue="Sri Lanka" required className={input} />
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className={label}>City</label>
+                    <input name="shippingCity" required className={input} />
+                  </div>
+                  <div>
+                    <label className={label}>Postal code</label>
+                    <input name="shippingPostalCode" required className={input} />
+                  </div>
+                  <div>
+                    <label className={label}>Country</label>
+                    <input name="shippingCountry" defaultValue="Sri Lanka" required className={input} />
+                  </div>
                 </div>
+                {session?.user && (
+                  <label className="flex items-center gap-2 text-sm text-neutral-600">
+                    <input type="checkbox" name="saveAddress" className="rounded" />
+                    Save this address to my account
+                  </label>
+                )}
               </div>
-            </div>
+            ) : (
+              (() => {
+                const address = savedAddresses.find((a) => a.id === selectedAddressId)!
+                return (
+                  <>
+                    <input type="hidden" name="shippingLine1" value={address.line1} />
+                    <input type="hidden" name="shippingLine2" value={address.line2 ?? ''} />
+                    <input type="hidden" name="shippingCity" value={address.city} />
+                    <input type="hidden" name="shippingPostalCode" value={address.postalCode} />
+                    <input type="hidden" name="shippingCountry" value={address.country} />
+                  </>
+                )
+              })()
+            )}
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">

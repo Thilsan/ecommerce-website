@@ -111,6 +111,8 @@ export const orders = pgTable('orders', {
   shippingCity: text('shipping_city'),
   shippingPostalCode: text('shipping_postal_code'),
   shippingCountry: text('shipping_country'),
+  deliveryPersonName: text('delivery_person_name'),
+  deliveryPersonPhone: text('delivery_person_phone'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

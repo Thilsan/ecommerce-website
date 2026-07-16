@@ -41,6 +41,7 @@ const INFORMATION_LINKS = [
   { name: 'About Us', href: '/about-us' },
   { name: 'FAQ', href: '/faq' },
   { name: 'Delivery', href: '/delivery' },
+  { name: 'Track Order', href: '/track-order' },
   { name: 'Privacy Policy', href: '/privacy-policy' },
   { name: 'Returns Policy', href: '/returns-policy' },
   { name: 'Terms & Conditions', href: '/terms-conditions' },

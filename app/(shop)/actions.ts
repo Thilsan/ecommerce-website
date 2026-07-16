@@ -2,12 +2,28 @@
 
 import { eq, sql } from 'drizzle-orm'
 import { db } from '@/db'
-import { orders, orderItems, payments, productVariants } from '@/db/schema'
+import { addresses, orders, orderItems, payments, productVariants } from '@/db/schema'
 import { getSession } from '@/lib/auth-helpers'
 
 export type CheckoutState = { error?: string; orderId?: string }
 
 type CartLine = { variantId: string; quantity: number }
+
+export type SavedAddress = {
+  id: string
+  line1: string
+  line2: string | null
+  city: string
+  postalCode: string
+  country: string
+}
+
+// Saved addresses for the signed-in customer, shown as pickable options at checkout.
+export async function getSavedAddresses(): Promise<SavedAddress[]> {
+  const session = await getSession()
+  if (!session?.user) return []
+  return db.query.addresses.findMany({ where: (a, { eq }) => eq(a.userId, session.user.id) })
+}
 
 export async function placeOrder(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
   const customerName = String(formData.get('customerName') ?? '').trim()
@@ -18,6 +34,7 @@ export async function placeOrder(_prev: CheckoutState, formData: FormData): Prom
   const shippingCity = String(formData.get('shippingCity') ?? '').trim()
   const shippingPostalCode = String(formData.get('shippingPostalCode') ?? '').trim()
   const shippingCountry = String(formData.get('shippingCountry') ?? '').trim()
+  const saveAddress = formData.get('saveAddress') === 'on'
 
   if (!customerName) return { error: 'Name is required.' }
   if (!customerEmail) return { error: 'Email is required.' }
@@ -106,6 +123,30 @@ export async function placeOrder(_prev: CheckoutState, formData: FormData): Prom
 
     return order.id
   })
+
+  if (session?.user && saveAddress) {
+    const existing = await db.query.addresses.findFirst({
+      where: (a, { and, eq, isNull }) =>
+        and(
+          eq(a.userId, session.user.id),
+          eq(a.line1, shippingLine1),
+          shippingLine2 ? eq(a.line2, shippingLine2) : isNull(a.line2),
+          eq(a.city, shippingCity),
+          eq(a.postalCode, shippingPostalCode),
+          eq(a.country, shippingCountry),
+        ),
+    })
+    if (!existing) {
+      await db.insert(addresses).values({
+        userId: session.user.id,
+        line1: shippingLine1,
+        line2: shippingLine2,
+        city: shippingCity,
+        postalCode: shippingPostalCode,
+        country: shippingCountry,
+      })
+    }
+  }
 
   return { orderId }
 }

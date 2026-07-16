@@ -420,3 +420,18 @@ export async function updateOrderStatus(formData: FormData): Promise<void> {
   revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath('/admin')
 }
+
+export async function assignDelivery(formData: FormData): Promise<void> {
+  await requireAdmin()
+  const orderId = String(formData.get('orderId') ?? '').trim()
+  const name = String(formData.get('deliveryPersonName') ?? '').trim()
+  const phone = String(formData.get('deliveryPersonPhone') ?? '').trim()
+  if (orderId) {
+    await db
+      .update(orders)
+      .set({ deliveryPersonName: name || null, deliveryPersonPhone: phone || null })
+      .where(eq(orders.id, orderId))
+  }
+  revalidatePath('/admin/orders')
+  revalidatePath(`/admin/orders/${orderId}`)
+}

@@ -50,6 +50,13 @@
       "when": 1784192808593,
       "tag": "0006_silly_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784195023872,
+      "tag": "0007_acoustic_hellcat",
+      "breakpoints": true
     }
   ]
 }

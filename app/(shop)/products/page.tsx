@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
-import { getCategories, listProducts, type ProductSort } from '@/db/queries'
+import { getCategoriesWithCounts, getFacetOptions, listProducts, type ProductSort } from '@/db/queries'
 import ProductCard from '@/app/components/ProductCard'
 import SortSelect from '@/app/components/SortSelect'
+import ProductFilterPanel from '@/app/components/ProductFilterPanel'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 
 export const metadata: Metadata = {
@@ -12,40 +12,56 @@ export const metadata: Metadata = {
 
 const SORTS: ProductSort[] = ['newest', 'price-asc', 'price-desc']
 
+function splitParam(value?: string) {
+  return value ? value.split(',').filter(Boolean) : undefined
+}
+
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; sort?: string; q?: string }>
+  searchParams: Promise<{
+    category?: string
+    color?: string
+    size?: string
+    sort?: string
+    q?: string
+    minPrice?: string
+    maxPrice?: string
+  }>
 }) {
-  const { category, sort, q } = await searchParams
+  const { category, color, size, sort, q, minPrice, maxPrice } = await searchParams
+  const categories = splitParam(category)
+  const colors = splitParam(color)
+  const sizes = splitParam(size)
   const activeSort: ProductSort =
     sort && (SORTS as string[]).includes(sort) ? (sort as ProductSort) : 'newest'
+  const minPriceCents = minPrice ? Number(minPrice) * 100 : undefined
+  const maxPriceCents = maxPrice ? Number(maxPrice) * 100 : undefined
 
-  const [categories, products] = await Promise.all([
-    getCategories(),
-    listProducts({ category, sort: activeSort, query: q }),
+  const [categoryOptions, facets, products] = await Promise.all([
+    getCategoriesWithCounts(),
+    getFacetOptions({ category: categories }),
+    listProducts({
+      category: categories,
+      color: colors,
+      size: sizes,
+      sort: activeSort,
+      query: q,
+      minPriceCents,
+      maxPriceCents,
+    }),
   ])
 
-  // Build a filter-pill href that preserves the current sort + search term.
-  function categoryHref(slug?: string) {
-    const params = new URLSearchParams()
-    if (slug) params.set('category', slug)
-    if (activeSort !== 'newest') params.set('sort', activeSort)
-    if (q) params.set('q', q)
-    const query = params.toString()
-    return query ? `/products?${query}` : '/products'
-  }
-
-  const filters = [{ name: 'All', slug: undefined as string | undefined }, ...categories]
-  const activeCategory = category ? categories.find((c) => c.slug === category) : undefined
+  const activeCategoryName =
+    categories?.length === 1 ? categoryOptions.find((c) => c.slug === categories[0])?.name : undefined
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <Breadcrumbs
         items={[
           { label: 'Home', href: '/' },
-          { label: 'Products', href: activeCategory ? '/products' : undefined },
-          ...(activeCategory ? [{ label: activeCategory.name }] : []),
+          { label: 'Products', href: activeCategoryName ? '/products' : undefined },
+          ...(activeCategoryName ? [{ label: activeCategoryName }] : []),
         ]}
       />
 
@@ -56,44 +72,26 @@ export default async function ProductsPage({
           </h1>
           <p className="mt-1 text-sm text-neutral-600">
             {products.length} {products.length === 1 ? 'item' : 'items'}
-            {category ? ' in this category' : ''}
           </p>
         </div>
         <SortSelect />
       </div>
 
-      {/* Category filter */}
-      <div className="mt-6 flex flex-wrap gap-2">
-        {filters.map((f) => {
-          const isActive = (f.slug ?? undefined) === (category ?? undefined)
-          return (
-            <Link
-              key={f.slug ?? 'all'}
-              href={categoryHref(f.slug)}
-              className={`rounded-full border px-4 py-1.5 text-sm transition ${
-                isActive
-                  ? 'border-brand bg-brand text-white'
-                  : 'border-black/10 text-neutral-700 hover:border-black/20'
-              }`}
-            >
-              {f.name}
-            </Link>
-          )
-        })}
+      <div className="mt-6">
+        <ProductFilterPanel categories={categoryOptions} colors={facets.colors} sizes={facets.sizes}>
+          {products.length === 0 ? (
+            <p className="mt-16 text-center text-neutral-500">
+              {q ? `No products found for "${q}".` : 'No products found. Try different filters.'}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </ProductFilterPanel>
       </div>
-
-      {/* Product grid */}
-      {products.length === 0 ? (
-        <p className="mt-16 text-center text-neutral-500">
-          {q ? `No products found for "${q}".` : 'No products found. Try a different category.'}
-        </p>
-      ) : (
-        <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      )}
     </main>
   )
 }

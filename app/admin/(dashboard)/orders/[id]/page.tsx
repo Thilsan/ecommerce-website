@@ -4,7 +4,8 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { user } from '@/auth-schema'
 import { formatPrice } from '@/lib/format'
-import { updateOrderStatus } from '@/app/admin/actions'
+import OrderStatusStepper from '@/app/components/OrderStatusStepper'
+import { updateOrderStatus, assignDelivery } from '@/app/admin/actions'
 
 const STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded']
 
@@ -70,6 +71,10 @@ export default async function OrderDetailPage({
             Update
           </button>
         </form>
+      </div>
+
+      <div className="mt-6 max-w-md rounded-xl border border-neutral-200 bg-white p-5">
+        <OrderStatusStepper status={order.status} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -147,6 +152,31 @@ export default async function OrderDetailPage({
               </p>
             </section>
           )}
+
+          <section className="rounded-xl border border-neutral-200 bg-white p-5">
+            <h2 className="text-sm font-semibold">Delivery team</h2>
+            <form action={assignDelivery} className="mt-2 space-y-2">
+              <input type="hidden" name="orderId" value={order.id} />
+              <input
+                name="deliveryPersonName"
+                defaultValue={order.deliveryPersonName ?? ''}
+                placeholder="Rider name"
+                className="w-full rounded-md border border-black/15 px-3 py-2 text-sm"
+              />
+              <input
+                name="deliveryPersonPhone"
+                defaultValue={order.deliveryPersonPhone ?? ''}
+                placeholder="Rider phone"
+                className="w-full rounded-md border border-black/15 px-3 py-2 text-sm"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-md bg-sky-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+              >
+                Save assignment
+              </button>
+            </form>
+          </section>
 
           <section className="rounded-xl border border-neutral-200 bg-white p-5">
             <h2 className="text-sm font-semibold">Payment</h2>
