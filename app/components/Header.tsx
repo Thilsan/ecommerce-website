@@ -261,6 +261,13 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
                       <p className="truncate text-xs text-neutral-500">{session.user.email}</p>
                     </div>
                     <div className="my-1 border-t border-black/10" />
+                    <Link
+                      href="/account"
+                      onClick={() => setAccountOpen(false)}
+                      className="block rounded-md px-3 py-2 text-sm text-neutral-700 transition hover:bg-black/5"
+                    >
+                      My account
+                    </Link>
                     <button
                       type="button"
                       onClick={onSignOut}

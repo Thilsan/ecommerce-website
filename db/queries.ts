@@ -194,6 +194,24 @@ export async function getCategoriesWithProducts() {
   })
 }
 
+// A signed-in customer's own order history, newest first.
+export async function getOrdersForUser(userId: string) {
+  return db.query.orders.findMany({
+    where: (o, { eq }) => eq(o.userId, userId),
+    with: { items: true },
+    orderBy: (o, { desc }) => desc(o.createdAt),
+  })
+}
+
+// A single order, scoped to its owning user — null if it doesn't exist or
+// belongs to someone else, so callers can 404 rather than leak other orders.
+export async function getOrderForUser(orderId: string, userId: string) {
+  return db.query.orders.findFirst({
+    where: (o, { and, eq }) => and(eq(o.id, orderId), eq(o.userId, userId)),
+    with: { items: { with: { variant: { with: { product: true } } } } },
+  })
+}
+
 // One product by its URL slug, including variants + category. Null if not found.
 export async function getProductBySlug(slug: string) {
   return db.query.products.findFirst({

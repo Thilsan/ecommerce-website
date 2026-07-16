@@ -15,3 +15,13 @@ export async function requireAdmin() {
   }
   return data
 }
+
+// Guard for signed-in-customer areas (e.g. /account). Redirects to the
+// storefront login, preserving the page the visitor was trying to reach.
+export async function requireUser(redirectTo = '/account') {
+  const data = await getSession()
+  if (!data) {
+    redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`)
+  }
+  return data
+}
