@@ -8,12 +8,13 @@ const SHOP_LINKS = [
   { name: 'Cosmetics', slug: 'cosmetics' },
 ]
 
-const ACCOUNT_LINKS = [
-  { name: 'My account', href: '/account' },
-  { name: 'Order history', href: '/account/orders' },
-  { name: 'Track order', href: '/track-order' },
-  { name: 'Wishlist', href: '/wishlist' },
-  { name: 'Cart', href: '/cart' },
+const INFORMATION_LINKS = [
+  { name: 'About Us', href: '/about-us' },
+  { name: 'FAQ', href: '/faq' },
+  { name: 'Delivery', href: '/delivery' },
+  { name: 'Privacy Policy', href: '/privacy-policy' },
+  { name: 'Returns Policy', href: '/returns-policy' },
+  { name: 'Terms & Conditions', href: '/terms-conditions' },
 ]
 
 export default function Footer() {
@@ -43,9 +44,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-white/80">Account</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-white/80">Information</h3>
           <ul className="mt-4 space-y-3 text-sm">
-            {ACCOUNT_LINKS.map((link) => (
+            {INFORMATION_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-white/60 transition hover:text-white">
                   {link.name}
