@@ -64,6 +64,10 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [loginPending, setLoginPending] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Real category data keyed by slug — feeds each category's mega menu.
@@ -78,7 +82,29 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
     setOpenMenu(null)
     setSearchOpen(false)
     setMobileOpen(false)
+    setLoginError(null)
     setAccountOpen((v) => !v)
+  }
+
+  async function onLoginSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoginError(null)
+    setLoginPending(true)
+    try {
+      const { error } = await authClient.signIn.email({ email: loginEmail, password: loginPassword })
+      if (error) {
+        setLoginError(error.message ?? 'Could not log in.')
+        return
+      }
+      setLoginEmail('')
+      setLoginPassword('')
+      setAccountOpen(false)
+      router.refresh()
+    } catch {
+      setLoginError('Could not reach the server. Please try again.')
+    } finally {
+      setLoginPending(false)
+    }
   }
 
   async function onSignOut() {
@@ -227,7 +253,7 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
             </button>
 
             {accountOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-black/10 bg-white p-2 shadow-lg">
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-black/10 bg-white p-2 shadow-lg">
                 {session?.user ? (
                   <>
                     <div className="px-3 py-2">
@@ -244,14 +270,37 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
                     </button>
                   </>
                 ) : (
-                  <div className="p-1">
-                    <Link
-                      href="/login"
-                      onClick={() => setAccountOpen(false)}
-                      className="block w-full rounded-full bg-brand px-3 py-2 text-center text-sm font-medium text-white transition hover:bg-brand/90"
+                  <form onSubmit={onLoginSubmit} className="p-2">
+                    {loginError && (
+                      <p className="mb-2 rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
+                        {loginError}
+                      </p>
+                    )}
+                    <label className="block text-xs font-medium text-neutral-600">Email</label>
+                    <input
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-black/15 px-2.5 py-1.5 text-sm"
+                    />
+                    <label className="mt-2.5 block text-xs font-medium text-neutral-600">Password</label>
+                    <input
+                      type="password"
+                      required
+                      autoComplete="current-password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-black/15 px-2.5 py-1.5 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={loginPending}
+                      className="mt-3 block w-full rounded-full bg-brand px-3 py-2 text-center text-sm font-medium text-white transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Log in
-                    </Link>
+                      {loginPending ? 'Signing in…' : 'Log in'}
+                    </button>
                     <p className="mt-3 text-center text-sm text-neutral-500">
                       Don&rsquo;t have an account?{' '}
                       <Link
@@ -262,7 +311,7 @@ export default function Header({ categories }: { categories: CategoryNav[] }) {
                         Register
                       </Link>
                     </p>
-                  </div>
+                  </form>
                 )}
               </div>
             )}
